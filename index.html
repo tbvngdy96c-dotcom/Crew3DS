@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Crew3DS — Web Demo</title>
+<title>Crew3DS — Orbital Nexus</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#050914;color:#eaf4ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden;touch-action:none}
@@ -12,137 +12,166 @@ button:active{transform:translateY(2px)}
 #touch{position:fixed;inset:0;pointer-events:none}
 #joy{position:absolute;left:24px;bottom:26px;width:150px;height:150px;border-radius:50%;background:#10243899;border:2px solid #3d648488;pointer-events:auto}
 #stick{position:absolute;left:45px;top:45px;width:56px;height:56px;border-radius:50%;background:#72cfffcc;border:2px solid #dff6ff}
-#buttons{position:absolute;right:24px;bottom:26px;display:flex;gap:9px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end;max-width:360px}
+#buttons{position:absolute;right:24px;bottom:26px;display:flex;gap:9px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end;max-width:390px}
 @media(max-width:700px){#help{display:none}#joy{width:130px;height:130px}#stick{left:37px;top:37px}#buttons{right:12px;bottom:14px}}
 @media (orientation:portrait){#wrap:after{content:"Rotate your iPad to landscape";position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#050914ee;color:#fff;font:700 22px system-ui;z-index:20;text-align:center;padding:30px}}
-
 #wrap{height:100%;display:flex;align-items:center;justify-content:center}
 canvas{width:min(100vw,177.78vh);height:min(56.25vw,100vh);image-rendering:auto;background:#07101b;box-shadow:0 0 30px #000}
-#help{position:fixed;left:10px;bottom:10px;background:#07101bdd;padding:8px 10px;border:1px solid #29435d;border-radius:8px;font-size:12px}
+#help{position:fixed;left:10px;bottom:10px;background:#07101ddd;padding:8px 10px;border:1px solid #29435d;border-radius:8px;font-size:12px}
+</style>
+
+<style id="main-menu-css">
+#mainMenu{position:fixed;inset:0;z-index:30;background:radial-gradient(circle at 50% 35%,#17395b 0,#091525 42%,#030711 100%);display:flex;align-items:center;justify-content:center;padding:22px}
+.menuPanel{width:min(900px,94vw);max-height:94vh;overflow:auto;background:#07111eeF;border:1px solid #426887;border-radius:24px;box-shadow:0 20px 70px #000b;padding:28px}
+.menuTitle{font-size:clamp(28px,5vw,52px);letter-spacing:3px;margin:0 0 4px}.menuSub{color:#8fb5d2;margin:0 0 24px}
+.menuGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.menuCard{background:#0c1b2b;border:1px solid #294963;border-radius:18px;padding:20px}.menuCard h2{margin:0 0 10px;font-size:20px}
+.menuInput{width:100%;padding:14px;border-radius:12px;border:1px solid #426887;background:#07111d;color:#fff;font-size:16px;margin:7px 0 10px}
+.menuButton{width:100%;margin-top:8px;background:#153a59;border-color:#5b91b7;font-size:16px}
+.codeBox{font-size:28px;letter-spacing:6px;text-align:center;padding:14px;background:#030a12;border:1px dashed #5b91b7;border-radius:12px;margin:12px 0}
+.lobbyMap{height:210px;position:relative;overflow:hidden;border-radius:15px;background:radial-gradient(circle,#183f60 1px,transparent 1px);background-size:22px 22px;border:1px solid #315873}
+.lobbyRoom{position:absolute;background:#10283b;border:2px solid #315b78;border-radius:9px;padding:8px;color:#8ed4ff;font-size:12px}
+.lobbyShip{position:absolute;left:44%;top:38%;width:115px;height:65px;border-radius:50% 50% 42% 42%;background:#2d6488;border:3px solid #9ee5ff;box-shadow:0 0 30px #54c8ff55}
+.lobbyPlayer{position:absolute;width:13px;height:20px;border-radius:7px;background:#55d6ff;border:1px solid white}
+.status{font-size:13px;color:#8fb5d2;min-height:20px;margin-top:9px}
+@media(max-width:700px){.menuGrid{grid-template-columns:1fr}.menuPanel{padding:18px}}
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
-<div id="help">Touch joystick: move · TASK: nearby task · MEET: meeting · LIST: tasks · CHAT: chat</div>
-<input id="chatInput" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" style="position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0">
-<div id="touch">
-  <div id="joy"><div id="stick"></div></div>
-  <div id="buttons">
-    <button id="taskBtn">TASK</button>
-    <button id="meetBtn">MEET</button>
-    <button id="listBtn">LIST</button>
-    <button id="chatBtn">CHAT</button>
-  </div>
+
+<div id="mainMenu"><div class="menuPanel">
+<h1 class="menuTitle">CREW3DS</h1><p class="menuSub">ORBITAL NEXUS • ONLINE WEB DEMO</p>
+<div id="menuHome"><div class="menuGrid">
+<div class="menuCard"><h2>🚀 Start a Lobby</h2><p>Open a lobby and wait for your friends. Every lobby gets its own code.</p>
+<input id="hostName" class="menuInput" maxlength="16" placeholder="Your player name"><button id="createLobby" class="menuButton">CREATE LOBBY</button></div>
+<div class="menuCard"><h2>🔗 Join a Lobby</h2><p>Enter the lobby code your friend gives you.</p>
+<input id="joinName" class="menuInput" maxlength="16" placeholder="Your player name"><input id="joinCode" class="menuInput" maxlength="6" placeholder="6-character code"><button id="joinLobby" class="menuButton">JOIN LOBBY</button></div>
 </div>
+<div class="menuCard" style="margin-top:16px"><h2>🛰️ Check for Updates</h2><p id="versionText">Installed version: 1.1.0</p>
+<button id="updateBtn" class="menuButton">CHECK FOR UPDATES</button><div id="updateStatus" class="status"></div></div></div>
+<div id="lobbyScreen" style="display:none"><div class="menuCard"><h2>Your Lobby</h2><p>Give this code to your friends:</p>
+<div class="codeBox" id="lobbyCode">------</div><button id="copyCode" class="menuButton">COPY LOBBY CODE</button><div class="status" id="lobbyStatus">Waiting for players…</div></div>
+<div class="menuCard" style="margin-top:16px"><h2>🌌 Docking Bay — Lobby Map</h2>
+<div class="lobbyMap" id="lobbyMap"><div class="lobbyRoom" style="left:5%;top:12%">Crew Dock</div><div class="lobbyRoom" style="left:70%;top:10%">Briefing</div><div class="lobbyRoom" style="left:8%;top:65%">Storage</div><div class="lobbyRoom" style="left:69%;top:66%">Observation</div><div class="lobbyShip"></div></div></div>
+<button id="startGame" class="menuButton">START GAME</button><button id="leaveLobby" class="menuButton">LEAVE LOBBY</button></div>
+</div></div>
+
+<div id="wrap" style="display:none"><canvas id="game" width="960" height="540"></canvas></div>
+<div id="help">Joystick/WASD: move · TASK: task · MEET: central meeting · LIST: tasks · CHAT: lobby/meeting chat</div>
+<input id="chatInput" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" style="position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0">
+<div id="touch"><div id="joy"><div id="stick"></div></div><div id="buttons"><button id="taskBtn">TASK</button><button id="meetBtn">MEET</button><button id="listBtn">LIST</button><button id="chatBtn">CHAT</button></div></div>
 <script>
-const c=document.getElementById("game"),ctx=c.getContext("2d");
-const W=c.width,H=c.height;
-const keys={}; addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=true;if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(e.key.toLowerCase()))e.preventDefault();});
+const c=document.getElementById("game"),ctx=c.getContext("2d"),W=c.width,H=c.height;
+const keys={};
+addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=true;if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(e.key.toLowerCase()))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
 const rooms=[
  ["Command",70,55,210,125],["Reactor",330,45,210,145],["Science",600,55,250,135],
  ["Comms",55,235,190,105],["Central Atrium",300,215,270,150],["Security",625,235,210,105],
- ["Crew Quarters",65,390,205,100],["Entertainment",310,390,205,100],
- ["Cargo",590,390,180,100],["Power Grid",800,330,105,160]
+ ["Crew Quarters",65,390,205,100],["Entertainment",310,390,205,100],["Cargo",590,390,180,100],["Power Grid",800,330,105,160]
 ];
-const tasks=[
-"Calibrate Navigation","Stabilize Reactor","Align Solar Panels","Scan Specimen","Repair Coolant Pump",
-"Route Communications","Upload Mission Data","Tune Deep-Space Antenna","Restore Power Grid","Sort Cargo",
-"Diagnose Medbay Scanner","Water Hydroponics","Clean Air Filters","Sync Security Cameras","Replace Fuse",
-"Decrypt Research Log","Charge Shuttle Cells","Map Asteroid Field","Test Life Support","Reset Door Controls"
+
+// Floor areas that connect the rooms. Movement is allowed only inside rooms/corridors.
+const corridors=[
+ {x:245,y:276,w:80,h:18},{x:550,y:276,w:100,h:18},{x:445,y:180,w:20,h:45},
+ {x:445,y:350,w:20,h:60},{x:245,y:276,w:80,h:18},{x:245,y:421,w:85,h:18},
+ {x:500,y:421,w:105,h:18},{x:755,y:350,w:65,h:18}
 ];
+
+// Automatic sliding doors. They open for the player OR a bot when close enough.
+const doors=[
+ {x:286,y:276,w:18,h:18,name:"Command Door"},
+ {x:560,y:276,w:18,h:18,name:"Security Door"},
+ {x:445,y:198,w:20,h:18,name:"Reactor Door"},
+ {x:445,y:350,w:20,h:18,name:"Entertainment Door"},
+ {x:286,y:421,w:18,h:18,name:"Crew Door"},
+ {x:548,y:421,w:18,h:18,name:"Cargo Door"},
+ {x:755,y:350,w:18,h:18,name:"Power Door"}
+];
+
+const tasks=["Calibrate Navigation","Stabilize Reactor","Align Solar Panels","Scan Specimen","Repair Coolant Pump","Route Communications","Upload Mission Data","Tune Deep-Space Antenna","Restore Power Grid","Sort Cargo","Diagnose Medbay Scanner","Water Hydroponics","Clean Air Filters","Sync Security Cameras","Replace Fuse","Decrypt Research Log","Charge Shuttle Cells","Map Asteroid Field","Test Life Support","Reset Door Controls"];
 let taskList=[...tasks].sort(()=>Math.random()-.5).slice(0,7).map((name,i)=>({name,done:false,x:rooms[(i+2)%rooms.length][1]+35,y:rooms[(i+2)%rooms.length][2]+55}));
-let p={x:455,y:285,s:3.2};
-let bots=Array.from({length:6},(_,i)=>({x:120+i*115,y:170+(i%2)*170,dx:Math.random()*2-1,dy:Math.random()*2-1,name:"BOT-"+(i+1)}));
+let p={x:455,y:285,s:3.2,r:13};
+let bots=Array.from({length:6},(_,i)=>({x:120+i*115,y:170+(i%2)*170,dx:Math.random()*2-1,dy:Math.random()*2-1,speed:.8,r:12,name:"BOT-"+(i+1)}));
 let meeting=false,chatOpen=false,taskOpen=false,chat="",messages=[];
-let seed=Math.floor(Math.random()*999999), round=1;
+let seed=Math.floor(Math.random()*999999),round=1;
 const colors=["#55d6ff","#ff5c67","#72f06d","#b884ff","#ffd35c","#ff8bd8","#8da6ff"];
 
 function rect(x,y,w,h,fill,stroke="#27445e"){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);ctx.strokeStyle=stroke;ctx.strokeRect(x,y,w,h)}
 function text(s,x,y,size=14,fill="#dceeff",align="left"){ctx.font=`600 ${size}px system-ui`;ctx.fillStyle=fill;ctx.textAlign=align;ctx.fillText(s,x,y)}
+function circle(x,y,r,fill,stroke=null){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}}
+function pointInRect(x,y,r,pad=0){return x>=r.x-pad&&x<=r.x+r.w+pad&&y>=r.y-pad&&y<=r.y+r.h+pad}
+function inWalkable(x,y,r=0){
+  for(const room of rooms)if(pointInRect(x,y,{x:room[1],y:room[2],w:room[3],h:room[4]},r))return true;
+  for(const q of corridors)if(pointInRect(x,y,q,r))return true;
+  return false;
+}
+function doorDistance(ent,d){return Math.hypot(ent.x-(d.x+d.w/2),ent.y-(d.y+d.h/2))}
+function doorOpen(d){if(doorDistance(p,d)<52)return true;for(const b of bots)if(doorDistance(b,d)<52)return true;return false}
+function blockedByDoor(x,y,r){for(const d of doors)if(!doorOpen(d)&&pointInRect(x,y,d,r))return true;return false}
+function canMoveTo(x,y,r){return inWalkable(x,y,r)&&!blockedByDoor(x,y,r)}
+function moveEntity(ent,dx,dy){
+  const len=Math.hypot(dx,dy);if(!len)return;dx/=len;dy/=len;const step=ent.speed||ent.s||1;
+  const nx=ent.x+dx*step,ny=ent.y+dy*step;
+  if(canMoveTo(nx,ent.y,ent.r))ent.x=nx;
+  if(canMoveTo(ent.x,ny,ent.r))ent.y=ny;
+}
+
+function drawWallsAndDoors(){
+  ctx.lineWidth=4;
+  rooms.forEach((r,i)=>{ctx.strokeStyle=i%2?"#294760":"#355774";ctx.strokeRect(r[1],r[2],r[3],r[4])});
+  ctx.fillStyle="#344d66";corridors.forEach(q=>ctx.fillRect(q.x,q.y,q.w,q.h));
+  doors.forEach(d=>{
+    const open=doorOpen(d);ctx.save();ctx.lineWidth=2;ctx.fillStyle=open?"#53ef8b":"#ff5360";ctx.strokeStyle=open?"#9bffbd":"#ff9aa3";
+    if(open){
+      if(d.w>d.h){ctx.fillRect(d.x,d.y,d.w,3);ctx.fillRect(d.x,d.y+d.h-3,d.w,3)}
+      else{ctx.fillRect(d.x,d.y,3,d.h);ctx.fillRect(d.x+d.w-3,d.y,3,d.h)}
+    }else{ctx.fillRect(d.x,d.y,d.w,d.h);ctx.strokeRect(d.x,d.y,d.w,d.h);ctx.fillStyle="#07101b";ctx.fillRect(d.x+4,d.y+4,d.w-8,d.h-8)}
+    ctx.restore();
+  });
+}
+function drawCharacter(ent,color,isPlayer=false){
+  ctx.save();ctx.translate(ent.x,ent.y);ctx.globalAlpha=.35;circle(0,11,13,"#000");ctx.globalAlpha=1;
+  ctx.fillStyle=color;ctx.fillRect(-15,-7,6,18);
+  ctx.beginPath();ctx.roundRect(-12,-15,24,31,9);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle="#dff6ff";ctx.lineWidth=1.5;ctx.stroke();
+  ctx.beginPath();ctx.roundRect(-8,-11,16,9,5);ctx.fillStyle="#c9f2ff";ctx.fill();ctx.strokeStyle="#ffffff99";ctx.stroke();
+  ctx.fillStyle="#fff";ctx.globalAlpha=.65;ctx.fillRect(-5,-9,5,2);ctx.globalAlpha=1;
+  if(isPlayer)text("YOU",0,-22,10,"#eafcff","center");ctx.restore();
+}
 function draw(){
- ctx.clearRect(0,0,W,H);
- // space background
- ctx.fillStyle="#050914";ctx.fillRect(0,0,W,H);
- for(let i=0;i<100;i++){let x=(i*83+seed*7)%W,y=(i*47+seed*3)%H;ctx.fillStyle=i%8===0?"#83b8ff":"#34485f";ctx.fillRect(x,y,1,1)}
- // map
- rooms.forEach((r,i)=>{rect(r[1],r[2],r[3],r[4],i%2?"#101e2d":"#0d1926");text(r[0],r[1]+10,r[2]+21,13,"#8ecfff")});
- // corridors
- ctx.strokeStyle="#344d66";ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(275,285);ctx.lineTo(300,285);ctx.lineTo(570,285);ctx.lineTo(625,285);ctx.moveTo(455,190);ctx.lineTo(455,215);ctx.moveTo(455,365);ctx.lineTo(455,390);ctx.stroke();
- ctx.lineWidth=1;
- // task stations
- taskList.forEach((t,i)=>{ctx.fillStyle=t.done?"#53ef8b":"#ffd34f";ctx.beginPath();ctx.arc(t.x,t.y,7,0,Math.PI*2);ctx.fill();});
- // bots
- bots.forEach((b,i)=>{ctx.fillStyle=colors[(i+1)%colors.length];ctx.beginPath();ctx.arc(b.x,b.y,10,0,Math.PI*2);ctx.fill();ctx.fillStyle="#c9f2ff";ctx.fillRect(b.x-6,b.y-5,12,5);});
- // player
- ctx.fillStyle=colors[0];ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.fill();ctx.fillStyle="#e7fbff";ctx.fillRect(p.x-7,p.y-7,14,6);
- // HUD
- rect(10,10,260,36,"#07101ddd","#29435d");text("CREW3DS  •  ORBITAL NEXUS",20,33,14);
- text("ROUND "+round+"  •  SEED "+seed,285,33,13,"#9ab3c8");
- text("Tasks: "+taskList.filter(t=>t.done).length+"/"+taskList.length,800,33,13,"#7ff7a5","right");
- if(meeting)drawMeeting(); else if(taskOpen)drawTasks(); else if(chatOpen)drawChat();
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#050914";ctx.fillRect(0,0,W,H);
+  for(let i=0;i<150;i++){let x=(i*83+seed*7)%W,y=(i*47+seed*3)%H;ctx.fillStyle=i%8===0?"#83b8ff":"#34485f";ctx.fillRect(x,y,1,1)}
+  rooms.forEach((r,i)=>{rect(r[1],r[2],r[3],r[4],i%2?"#101e2d":"#0d1926");text(r[0],r[1]+10,r[2]+21,13,"#8ecfff")});
+  drawWallsAndDoors();
+  taskList.forEach(t=>{ctx.fillStyle=t.done?"#53ef8b":"#ffd34f";ctx.beginPath();ctx.arc(t.x,t.y,7,0,Math.PI*2);ctx.fill();if(!t.done){ctx.strokeStyle="#fff7b0";ctx.stroke()}});
+  bots.forEach((b,i)=>drawCharacter(b,colors[(i+1)%colors.length]));drawCharacter(p,colors[0],true);
+  rect(10,10,260,36,"#07101ddd","#29435d");text("CREW3DS  •  ORBITAL NEXUS",20,33,14);text("ROUND "+round+"  •  SEED "+seed,285,33,13,"#9ab3c8");text("Tasks: "+taskList.filter(t=>t.done).length+"/"+taskList.length,800,33,13,"#7ff7a5","right");
+  const nearby=doors.find(d=>doorDistance(p,d)<70);if(nearby){const open=doorOpen(nearby);rect(360,505,240,25,"#07101ddd",open?"#53ef8b":"#ff5360");text(open?nearby.name+" • OPEN":"Opening "+nearby.name+"…",480,523,12,open?"#8dffad":"#ff9da5","center")}
+  if(meeting)drawMeeting();else if(taskOpen)drawTasks();else if(chatOpen)drawChat();
 }
-function drawTasks(){
- rect(260,70,440,400,"#07101df2","#5b89ad");text("TASKS",480,105,24,"#fff","center");
- taskList.forEach((t,i)=>{text((t.done?"✓ ":"○ ")+t.name,290,140+i*39,16,t.done?"#72f06d":"#dceeff")});
- text("Press T to close",480,445,13,"#8ca9bf","center");
-}
-function drawChat(){
- rect(170,300,620,190,"#07101df5","#5b89ad");text("LOBBY / MEETING CHAT",190,327,16,"#8ecfff");
- messages.slice(-5).forEach((m,i)=>text(m,190,355+i*22,13));
- rect(190,455,580,24,"#0d1926","#29435d");text(chat||"Tap CHAT to type…",200,472,13,chat?"#fff":"#667f95");
-}
-function drawMeeting(){
- rect(135,55,690,430,"#07101df7","#ff5360");text("EMERGENCY MEETING",480,90,24,"#ff6d78","center");
- text("Discussion + chat",480,115,13,"#9ab3c8","center");
- text("A meeting is active. Use Enter to chat, then vote.",480,145,15,"#fff","center");
- text("A  BOT-1",190,190,14);text("B  BOT-2",190,220,14);text("C  BOT-3",190,250,14);
- text("D  BOT-4",500,190,14);text("E  BOT-5",500,220,14);text("F  BOT-6",500,250,14);
- text("Press R to end meeting",480,450,13,"#ff9ca3","center");
-}
+function drawTasks(){rect(260,70,440,400,"#07101df2","#5b89ad");text("TASKS",480,105,24,"#fff","center");taskList.forEach((t,i)=>text((t.done?"✓ ":"○ ")+t.name,290,140+i*39,16,t.done?"#72f06d":"#dceeff"));text("Press T to close",480,445,13,"#8ca9bf","center")}
+function drawChat(){rect(170,300,620,190,"#07101df5","#5b89ad");text("LOBBY / MEETING CHAT",190,327,16,"#8ecfff");messages.slice(-5).forEach((m,i)=>text(m,190,355+i*22,13));rect(190,455,580,24,"#0d1926","#29435d");text(chat||"Tap CHAT to type…",200,472,13,chat?"#fff":"#667f95")}
+function drawMeeting(){rect(135,55,690,430,"#07101df7","#ff5360");text("EMERGENCY MEETING",480,90,24,"#ff6d78","center");text("Meetings can only be called from the Central Atrium.",480,115,13,"#9ab3c8","center");text("Discussion + chat",480,145,15,"#fff","center");["BOT-1","BOT-2","BOT-3","BOT-4","BOT-5","BOT-6"].forEach((n,i)=>text(String.fromCharCode(65+i)+"  "+n,i<3?190:500,190+(i%3)*30,14));text("Press R to end meeting",480,450,13,"#ff9ca3","center")}
 
-const joy=document.getElementById("joy"), stick=document.getElementById("stick");
-let joyActive=false, joyX=0, joyY=0;
-function setJoy(clientX,clientY){
- const r=joy.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
- let dx=clientX-cx, dy=clientY-cy, max=r.width*.32, d=Math.hypot(dx,dy);
- if(d>max){dx=dx/d*max;dy=dy/d*max}
- joyX=dx/max; joyY=dy/max;
- stick.style.transform=`translate(${dx}px,${dy}px)`;
-}
+const joy=document.getElementById("joy"),stick=document.getElementById("stick");let joyActive=false,joyX=0,joyY=0;
+function setJoy(clientX,clientY){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=clientX-cx,dy=clientY-cy,max=r.width*.32,d=Math.hypot(dx,dy);if(d>max){dx=dx/d*max;dy=dy/d*max}joyX=dx/max;joyY=dy/max;stick.style.transform=`translate(${dx}px,${dy}px)`}
 function resetJoy(){joyActive=false;joyX=joyY=0;stick.style.transform="translate(0,0)"}
-joy.addEventListener("pointerdown",e=>{joyActive=true;joy.setPointerCapture(e.pointerId);setJoy(e.clientX,e.clientY)});
-joy.addEventListener("pointermove",e=>{if(joyActive)setJoy(e.clientX,e.clientY)});
-joy.addEventListener("pointerup",resetJoy); joy.addEventListener("pointercancel",resetJoy);
+joy.addEventListener("pointerdown",e=>{joyActive=true;joy.setPointerCapture(e.pointerId);setJoy(e.clientX,e.clientY)});joy.addEventListener("pointermove",e=>{if(joyActive)setJoy(e.clientX,e.clientY)});joy.addEventListener("pointerup",resetJoy);joy.addEventListener("pointercancel",resetJoy);
 function tap(id,fn){document.getElementById(id).addEventListener("pointerdown",e=>{e.preventDefault();fn()})}
-tap("taskBtn",interact); tap("meetBtn",()=>meeting=!meeting);
-tap("listBtn",()=>taskOpen=!taskOpen);
-tap("chatBtn",()=>{chatOpen=true; setTimeout(()=>document.getElementById("chatInput")?.focus(),50)});
-
+tap("taskBtn",interact);tap("meetBtn",callMeeting);tap("listBtn",()=>taskOpen=!taskOpen);tap("chatBtn",()=>{chatOpen=true;setTimeout(()=>document.getElementById("chatInput")?.focus(),50)});
 function move(){
- let dx=((keys["d"]||keys["arrowright"])?1:0)-((keys["a"]||keys["arrowleft"])?1:0)+joyX;
- let dy=((keys["s"]||keys["arrowdown"])?1:0)-((keys["w"]||keys["arrowup"])?1:0)+joyY;
- if(dx||dy){let l=Math.hypot(dx,dy);p.x+=dx/l*p.s;p.y+=dy/l*p.s;p.x=Math.max(35,Math.min(W-35,p.x));p.y=Math.max(50,Math.min(H-25,p.y));}
- bots.forEach(b=>{if(Math.random()<.02){b.dx=Math.random()*2-1;b.dy=Math.random()*2-1}b.x+=b.dx*.7;b.y+=b.dy*.7;if(b.x<30||b.x>930)b.dx*=-1;if(b.y<50||b.y>510)b.dy*=-1});
+  if(meeting||taskOpen||chatOpen)return;
+  let dx=((keys["d"]||keys["arrowright"])?1:0)-((keys["a"]||keys["arrowleft"])?1:0)+joyX;
+  let dy=((keys["s"]||keys["arrowdown"])?1:0)-((keys["w"]||keys["arrowup"])?1:0)+joyY;
+  if(dx||dy)moveEntity(p,dx,dy);
+  bots.forEach(b=>{if(Math.random()<.025){b.dx=Math.random()*2-1;b.dy=Math.random()*2-1}const ox=b.x,oy=b.y;moveEntity(b,b.dx,b.dy);if(ox===b.x&&oy===b.y){b.dx*=-1;b.dy*=-1}});
 }
-let last={};
-function pressed(k){let v=!!keys[k],old=!!last[k];last[k]=v;return v&&!old}
-function interact(){
- let nearest=null,dist=999;
- taskList.forEach(t=>{let d=Math.hypot(p.x-t.x,p.y-t.y);if(d<28&&d<dist){nearest=t;dist=d}});
- if(nearest){nearest.done=true;messages.push("You completed: "+nearest.name);}
-}
-const ci=document.getElementById("chatInput");
-ci.addEventListener("input",()=>{chat=ci.value.slice(0,120)});
-ci.addEventListener("keydown",e=>{if(e.key==="Enter"){if(chat.trim()){messages.push("YOU: "+chat.trim());chat="";ci.value=""}chatOpen=true;e.preventDefault()}});
-function loop(){move();
- if(pressed("e"))interact();
- if(pressed("r"))meeting=!meeting;
- if(pressed("t"))taskOpen=!taskOpen;
- if(pressed("enter")){if(!chatOpen){chatOpen=true;}else if(chat.trim()){messages.push("YOU: "+chat.trim());chat="";}}
- if(chatOpen){for(let k in keys)if(k.length===1&&keys[k]&&!last[k] && !/iphone|ipad|ipod/i.test(navigator.userAgent)){chat+=k.toUpperCase();}}
- draw();requestAnimationFrame(loop);}
+function interact(){if(meeting)return;let nearest=null,dist=999;taskList.forEach(t=>{let d=Math.hypot(p.x-t.x,p.y-t.y);if(d<30&&d<dist){nearest=t;dist=d}});if(nearest&&!nearest.done){nearest.done=true;messages.push("YOU: Completed "+nearest.name)}}
+function inCentralAtrium(){return pointInRect(p.x,p.y,{x:300,y:215,w:270,h:150},-8)}
+function callMeeting(){if(inCentralAtrium()){meeting=true;chatOpen=false;taskOpen=false}else{messages.push("SYSTEM: You can only call a meeting in the Central Atrium.");chatOpen=true}}
+const ci=document.getElementById("chatInput");ci.addEventListener("input",()=>{chat=ci.value.slice(0,120)});ci.addEventListener("keydown",e=>{if(e.key==="Enter"){if(chat.trim()){messages.push("YOU: "+chat.trim());chat="";ci.value=""}chatOpen=true;e.preventDefault()}});
+let last={};function pressed(k){const v=!!keys[k],old=!!last[k];last[k]=v;return v&&!old}
+function loop(){if(pressed("e"))interact();if(pressed("r")){if(meeting)meeting=false;else callMeeting()}if(pressed("t"))taskOpen=!taskOpen;if(pressed("escape")){meeting=false;taskOpen=false;chatOpen=false}if(pressed("enter")&&!chatOpen){chatOpen=true;setTimeout(()=>ci.focus(),30)}move();draw();requestAnimationFrame(loop)}
 draw();loop();
 </script>
 </body>
