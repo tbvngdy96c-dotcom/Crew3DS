@@ -147,6 +147,7 @@ function draw(){
   taskList.forEach(t=>{ctx.fillStyle=t.done?"#53ef8b":"#ffd34f";ctx.beginPath();ctx.arc(t.x,t.y,7,0,Math.PI*2);ctx.fill();if(!t.done){ctx.strokeStyle="#fff7b0";ctx.stroke()}});
   bots.forEach((b,i)=>drawCharacter(b,colors[(i+1)%colors.length]));drawCharacter(p,colors[0],true);
   rect(10,10,260,36,"#07101ddd","#29435d");text("CREW3DS  •  ORBITAL NEXUS",20,33,14);text("ROUND "+round+"  •  SEED "+seed,285,33,13,"#9ab3c8");text("Tasks: "+taskList.filter(t=>t.done).length+"/"+taskList.length,800,33,13,"#7ff7a5","right");
+  if(window.crewLobbyCode) text(window.crewLobbyCode==="OFFLINE"?"OFFLINE MODE":"LOBBY "+window.crewLobbyCode,480,52,11,window.crewLobbyCode==="OFFLINE"?"#ffd35c":"#7195ae","center");
   const nearby=doors.find(d=>doorDistance(p,d)<70);if(nearby){const open=doorOpen(nearby);rect(360,505,240,25,"#07101ddd",open?"#53ef8b":"#ff5360");text(open?nearby.name+" • OPEN":"Opening "+nearby.name+"…",480,523,12,open?"#8dffad":"#ff9da5","center")}
   if(meeting)drawMeeting();else if(taskOpen)drawTasks();else if(chatOpen)drawChat();
 }
