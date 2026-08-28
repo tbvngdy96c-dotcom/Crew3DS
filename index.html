@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Crew3DS — Web Demo</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#050914;color:#eaf4ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden;touch-action:none}
+button{font:700 14px system-ui;color:#eaf4ff;background:#102438;border:1px solid #3d6484;border-radius:12px;padding:13px 16px;min-width:72px;box-shadow:0 3px 0 #07101b}
+button:active{transform:translateY(2px)}
+#touch{position:fixed;inset:0;pointer-events:none}
+#joy{position:absolute;left:24px;bottom:26px;width:150px;height:150px;border-radius:50%;background:#10243899;border:2px solid #3d648488;pointer-events:auto}
+#stick{position:absolute;left:45px;top:45px;width:56px;height:56px;border-radius:50%;background:#72cfffcc;border:2px solid #dff6ff}
+#buttons{position:absolute;right:24px;bottom:26px;display:flex;gap:9px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end;max-width:360px}
+@media(max-width:700px){#help{display:none}#joy{width:130px;height:130px}#stick{left:37px;top:37px}#buttons{right:12px;bottom:14px}}
+@media (orientation:portrait){#wrap:after{content:"Rotate your iPad to landscape";position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#050914ee;color:#fff;font:700 22px system-ui;z-index:20;text-align:center;padding:30px}}
+
+#wrap{height:100%;display:flex;align-items:center;justify-content:center}
+canvas{width:min(100vw,177.78vh);height:min(56.25vw,100vh);image-rendering:auto;background:#07101b;box-shadow:0 0 30px #000}
+#help{position:fixed;left:10px;bottom:10px;background:#07101bdd;padding:8px 10px;border:1px solid #29435d;border-radius:8px;font-size:12px}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
+<div id="help">Touch joystick: move · TASK: nearby task · MEET: meeting · LIST: tasks · CHAT: chat</div>
+<input id="chatInput" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" style="position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0">
+<div id="touch">
+  <div id="joy"><div id="stick"></div></div>
+  <div id="buttons">
+    <button id="taskBtn">TASK</button>
+    <button id="meetBtn">MEET</button>
+    <button id="listBtn">LIST</button>
+    <button id="chatBtn">CHAT</button>
+  </div>
+</div>
+<script>
+const c=document.getElementById("game"),ctx=c.getContext("2d");
+const W=c.width,H=c.height;
+const keys={}; addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=true;if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(e.key.toLowerCase()))e.preventDefault();});
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+
+const rooms=[
+ ["Command",70,55,210,125],["Reactor",330,45,210,145],["Science",600,55,250,135],
+ ["Comms",55,235,190,105],["Central Atrium",300,215,270,150],["Security",625,235,210,105],
+ ["Crew Quarters",65,390,205,100],["Entertainment",310,390,205,100],
+ ["Cargo",590,390,180,100],["Power Grid",800,330,105,160]
+];
+const tasks=[
+"Calibrate Navigation","Stabilize Reactor","Align Solar Panels","Scan Specimen","Repair Coolant Pump",
+"Route Communications","Upload Mission Data","Tune Deep-Space Antenna","Restore Power Grid","Sort Cargo",
+"Diagnose Medbay Scanner","Water Hydroponics","Clean Air Filters","Sync Security Cameras","Replace Fuse",
+"Decrypt Research Log","Charge Shuttle Cells","Map Asteroid Field","Test Life Support","Reset Door Controls"
+];
+let taskList=[...tasks].sort(()=>Math.random()-.5).slice(0,7).map((name,i)=>({name,done:false,x:rooms[(i+2)%rooms.length][1]+35,y:rooms[(i+2)%rooms.length][2]+55}));
+let p={x:455,y:285,s:3.2};
+let bots=Array.from({length:6},(_,i)=>({x:120+i*115,y:170+(i%2)*170,dx:Math.random()*2-1,dy:Math.random()*2-1,name:"BOT-"+(i+1)}));
+let meeting=false,chatOpen=false,taskOpen=false,chat="",messages=[];
+let seed=Math.floor(Math.random()*999999), round=1;
+const colors=["#55d6ff","#ff5c67","#72f06d","#b884ff","#ffd35c","#ff8bd8","#8da6ff"];
+
+function rect(x,y,w,h,fill,stroke="#27445e"){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);ctx.strokeStyle=stroke;ctx.strokeRect(x,y,w,h)}
+function text(s,x,y,size=14,fill="#dceeff",align="left"){ctx.font=`600 ${size}px system-ui`;ctx.fillStyle=fill;ctx.textAlign=align;ctx.fillText(s,x,y)}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ // space background
+ ctx.fillStyle="#050914";ctx.fillRect(0,0,W,H);
+ for(let i=0;i<100;i++){let x=(i*83+seed*7)%W,y=(i*47+seed*3)%H;ctx.fillStyle=i%8===0?"#83b8ff":"#34485f";ctx.fillRect(x,y,1,1)}
+ // map
+ rooms.forEach((r,i)=>{rect(r[1],r[2],r[3],r[4],i%2?"#101e2d":"#0d1926");text(r[0],r[1]+10,r[2]+21,13,"#8ecfff")});
+ // corridors
+ ctx.strokeStyle="#344d66";ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(275,285);ctx.lineTo(300,285);ctx.lineTo(570,285);ctx.lineTo(625,285);ctx.moveTo(455,190);ctx.lineTo(455,215);ctx.moveTo(455,365);ctx.lineTo(455,390);ctx.stroke();
+ ctx.lineWidth=1;
+ // task stations
+ taskList.forEach((t,i)=>{ctx.fillStyle=t.done?"#53ef8b":"#ffd34f";ctx.beginPath();ctx.arc(t.x,t.y,7,0,Math.PI*2);ctx.fill();});
+ // bots
+ bots.forEach((b,i)=>{ctx.fillStyle=colors[(i+1)%colors.length];ctx.beginPath();ctx.arc(b.x,b.y,10,0,Math.PI*2);ctx.fill();ctx.fillStyle="#c9f2ff";ctx.fillRect(b.x-6,b.y-5,12,5);});
+ // player
+ ctx.fillStyle=colors[0];ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.fill();ctx.fillStyle="#e7fbff";ctx.fillRect(p.x-7,p.y-7,14,6);
+ // HUD
+ rect(10,10,260,36,"#07101ddd","#29435d");text("CREW3DS  •  ORBITAL NEXUS",20,33,14);
+ text("ROUND "+round+"  •  SEED "+seed,285,33,13,"#9ab3c8");
+ text("Tasks: "+taskList.filter(t=>t.done).length+"/"+taskList.length,800,33,13,"#7ff7a5","right");
+ if(meeting)drawMeeting(); else if(taskOpen)drawTasks(); else if(chatOpen)drawChat();
+}
+function drawTasks(){
+ rect(260,70,440,400,"#07101df2","#5b89ad");text("TASKS",480,105,24,"#fff","center");
+ taskList.forEach((t,i)=>{text((t.done?"✓ ":"○ ")+t.name,290,140+i*39,16,t.done?"#72f06d":"#dceeff")});
+ text("Press T to close",480,445,13,"#8ca9bf","center");
+}
+function drawChat(){
+ rect(170,300,620,190,"#07101df5","#5b89ad");text("LOBBY / MEETING CHAT",190,327,16,"#8ecfff");
+ messages.slice(-5).forEach((m,i)=>text(m,190,355+i*22,13));
+ rect(190,455,580,24,"#0d1926","#29435d");text(chat||"Tap CHAT to type…",200,472,13,chat?"#fff":"#667f95");
+}
+function drawMeeting(){
+ rect(135,55,690,430,"#07101df7","#ff5360");text("EMERGENCY MEETING",480,90,24,"#ff6d78","center");
+ text("Discussion + chat",480,115,13,"#9ab3c8","center");
+ text("A meeting is active. Use Enter to chat, then vote.",480,145,15,"#fff","center");
+ text("A  BOT-1",190,190,14);text("B  BOT-2",190,220,14);text("C  BOT-3",190,250,14);
+ text("D  BOT-4",500,190,14);text("E  BOT-5",500,220,14);text("F  BOT-6",500,250,14);
+ text("Press R to end meeting",480,450,13,"#ff9ca3","center");
+}
+
+const joy=document.getElementById("joy"), stick=document.getElementById("stick");
+let joyActive=false, joyX=0, joyY=0;
+function setJoy(clientX,clientY){
+ const r=joy.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+ let dx=clientX-cx, dy=clientY-cy, max=r.width*.32, d=Math.hypot(dx,dy);
+ if(d>max){dx=dx/d*max;dy=dy/d*max}
+ joyX=dx/max; joyY=dy/max;
+ stick.style.transform=`translate(${dx}px,${dy}px)`;
+}
+function resetJoy(){joyActive=false;joyX=joyY=0;stick.style.transform="translate(0,0)"}
+joy.addEventListener("pointerdown",e=>{joyActive=true;joy.setPointerCapture(e.pointerId);setJoy(e.clientX,e.clientY)});
+joy.addEventListener("pointermove",e=>{if(joyActive)setJoy(e.clientX,e.clientY)});
+joy.addEventListener("pointerup",resetJoy); joy.addEventListener("pointercancel",resetJoy);
+function tap(id,fn){document.getElementById(id).addEventListener("pointerdown",e=>{e.preventDefault();fn()})}
+tap("taskBtn",interact); tap("meetBtn",()=>meeting=!meeting);
+tap("listBtn",()=>taskOpen=!taskOpen);
+tap("chatBtn",()=>{chatOpen=true; setTimeout(()=>document.getElementById("chatInput")?.focus(),50)});
+
+function move(){
+ let dx=((keys["d"]||keys["arrowright"])?1:0)-((keys["a"]||keys["arrowleft"])?1:0)+joyX;
+ let dy=((keys["s"]||keys["arrowdown"])?1:0)-((keys["w"]||keys["arrowup"])?1:0)+joyY;
+ if(dx||dy){let l=Math.hypot(dx,dy);p.x+=dx/l*p.s;p.y+=dy/l*p.s;p.x=Math.max(35,Math.min(W-35,p.x));p.y=Math.max(50,Math.min(H-25,p.y));}
+ bots.forEach(b=>{if(Math.random()<.02){b.dx=Math.random()*2-1;b.dy=Math.random()*2-1}b.x+=b.dx*.7;b.y+=b.dy*.7;if(b.x<30||b.x>930)b.dx*=-1;if(b.y<50||b.y>510)b.dy*=-1});
+}
+let last={};
+function pressed(k){let v=!!keys[k],old=!!last[k];last[k]=v;return v&&!old}
+function interact(){
+ let nearest=null,dist=999;
+ taskList.forEach(t=>{let d=Math.hypot(p.x-t.x,p.y-t.y);if(d<28&&d<dist){nearest=t;dist=d}});
+ if(nearest){nearest.done=true;messages.push("You completed: "+nearest.name);}
+}
+const ci=document.getElementById("chatInput");
+ci.addEventListener("input",()=>{chat=ci.value.slice(0,120)});
+ci.addEventListener("keydown",e=>{if(e.key==="Enter"){if(chat.trim()){messages.push("YOU: "+chat.trim());chat="";ci.value=""}chatOpen=true;e.preventDefault()}});
+function loop(){move();
+ if(pressed("e"))interact();
+ if(pressed("r"))meeting=!meeting;
+ if(pressed("t"))taskOpen=!taskOpen;
+ if(pressed("enter")){if(!chatOpen){chatOpen=true;}else if(chat.trim()){messages.push("YOU: "+chat.trim());chat="";}}
+ if(chatOpen){for(let k in keys)if(k.length===1&&keys[k]&&!last[k] && !/iphone|ipad|ipod/i.test(navigator.userAgent)){chat+=k.toUpperCase();}}
+ draw();requestAnimationFrame(loop);}
+draw();loop();
+</script>
+</body>
+</html>
